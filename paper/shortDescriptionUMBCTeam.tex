@@ -1,0 +1,75 @@
+%
+% File acl-hlt2011.tex
+%
+% Contact: gdzhou@suda.edu.cn
+%%
+%% Based on the style files for ACL2008 by Joakim Nivre and Noah Smith
+%% and that of ACL2010 by Jing-Shin Chang and Philipp Koehn
+
+
+\documentclass[11pt]{article}
+\usepackage{acl-hlt2011}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{url}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\setlength\titlebox{6.5cm}    % Expanding the titlebox
+
+\title{UMBC Team: Event Nugget Detection and Coreference
+Classification of Event Nugget using Context Features and Semantic Similarity
+}
+
+\author{Taneeya Satyapanich  \\
+  University of Maryland, Baltimore County \\
+  Baltimore, MD, 21250, USA \\
+  {\tt taneeya1@umbc.edu} \\\And
+  Tim Finin \\
+  University of Maryland, Baltimore County \\
+  Baltimore, MD, 21250, USA \\
+  {\tt finin@umbc.edu} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+
+\section{System Description}
+
+We considered the event nugget detection problem as a document classification problem. We thought that the document that contained the similar event will contain the similar group of words. We did not use the entire document to build the classification model. We filtered only the context of the event nuggets such as a phrase, a sentence to be used as input data. Then we built features vectors using: word n-gram, character n-gram, prefix and suffix, word shape, the semantic similarity between the event nugget and its event subtypes. For the similarity values, we used our UMBC STS system \cite{Han:13}. We used the Stanford Classifier tool \cite{Man:03} to build the classification model of each event subtypes. 
+
+\section{Training data}
+
+We combined the LDC2015E69 and LDC2014E121 corpus. The total is 351 files. Then we divided them into training data (80\%) and development data (20\%). We experiment to find the best parameters for classification model. We can reach 0.80 of F1-measure when testing with development data.
+
+
+\section{Testing}
+
+The testing step was tricky different from when we build the training data. Because we do not know where the event nugget is in the document. We cannot find the context of the event nugget to be our input data. So we have to scan through every sentence and then divided them into chunks as noun phrase or verb phrase followed theirs part of speech tags. Then we build features vectors from these chunks instead. After we put these features through the classifier, we selected only the answer of the classifier that has confidence score higher that our thresholds. These thresholds were defined by observing the confidence score of development data. About the coreference resolution of the event nugget, we introduced the Stanford CoreNLP \cite{Man:14} to find the coreference in the document. We got the coreference sets from Stanford CoreNLP and we have the event nugget sets from our system that include the context of each nugget. We compared these two sets and selected the event as the coreference if they appeared in both sets.
+
+
+\begin{thebibliography}{}
+\bibitem[\protect\citename{Han}2013]{Han:13}
+{Lushan Han, Abhay L. Kashyap, Tim Finin, James Mayfield, and Johnathan Weese.}
+\newblock 2013.
+\newblock {\em UMBC EBIQUITY-CORE: Semantic Textual Similarity Systems},.
+\newblock In Second Joint Conf. on Lexical and Computational Semantics. Association for Computational Linguistics.
+
+\bibitem[\protect\citename{{Manning and Klein.}}2003]{Man:03}
+{Christopher Manning and Dan Klein.}.
+\newblock 2003.
+\newblock {\em Optimization, Maxent Models, and Conditional Estimation without Magic}.
+\newblock Tutorial at HLT-NAACL 2003 and ACL 2003.
+
+\bibitem[\protect\citename{{Manning, et.al.}}2014]{Man:14}
+{Manning, Christopher D., Surdeanu, Mihai, Bauer, John, Finkel, Jenny, Bethard, Steven J., and McClosky, David}.
+\newblock 2014.
+\newblock {\em The Stanford CoreNLP Natural Language Processing Toolkit}.
+\newblock In Proceedings of 52nd Annual Meeting of the Association for Computational Linguistics: System Demonstrations, pp. 55-60. 
+
+
+\end{thebibliography}
+
+\end{document}
