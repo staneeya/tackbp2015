@@ -1,0 +1,233 @@
+
+%% Based on the style files for ACL2008 by Joakim Nivre and Noah Smith
+%% and that of ACL2010 by Jing-Shin Chang and Philipp Koehn
+
+
+\documentclass[11pt]{article}
+\usepackage{acl-hlt2011}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{url}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\setlength\titlebox{6.5cm}    % Expanding the titlebox
+
+\title{
+Event Nugget Detection using Thresholding and Classification
+}
+
+\author{Taneeya Satyapanich  \\
+  University of Maryland, Baltimore County \\
+  Baltimore, MD, 21250, USA \\
+  {\tt taneeya1@umbc.edu} \\\And
+  Tim Finin \\
+  University of Maryland, Baltimore County \\
+  Baltimore, MD, 21250, USA \\
+  {\tt finin@umbc.edu} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  This paper described our Event Nugget Detection  system that we submitted to the TAC KBP 2015. We considered the problem as document classification problem. We used confidence scores from classifier to detect the event by thresholding. Our feature vectors consist of event nugget context, part of speech tags of event nugget context and semantic similarity score between event nugget and event subtypes. Our performance is quite low; we got F1 measure of 0.33 for both event nugget detection task and coreference task.
+\end{abstract}
+
+\section{Introduction}
+
+Text Analysis Conference Knowledge Base Population (TAC KBP) 2015 is an evaluation workshops in Natural Language Processing. They provided collection of raw data such as newswires, forums, including their annotation that suitable for using as training corpus. Besides, they have evaluation procedure to evaluate all of the participant system output. The Event track is one of three tracks that are provided in this year. In the Event track, we participated in two subtasks; Event Nugget Detection, and Event Nugget Detection and Coreference \cite{teruko2,teruko}. Event Nugget Detection goal is identify all of the event mentions in document, also classify the event into an event type/subtype. The event types/subtypes are defined in the Rich ERE Annotation guidelines. In addition, systems must identify Realis attribute (ACTUAL, GENERIC, OTHER), which are also described in the Rich ERE guidelines. For Event Nugget Detection and Coreference task, in addition to the system has to identify and classify the event mentions, it has to identify event coreference links at the same time. \\
+\indent Event means something that happens or may not happen at a particular place and time but it is mentioned in the document. There have been multiple research that studied the event mention detection. Supervised machine learning such as \cite{uiccg,grishman}. \cite{uiccg} used supervised machine learning method plus measuring overlapping of the event argument and the world knowledge corpus. \cite{grishman} used Maximum Entropy based classifiers to detect trigger word to distinguish event mentions from non-event-mentions. Unsupervised machine learning has been used in \cite{heng}. They created some inference rules on statistics value of detected triggers word that are associated with particular types of events to improve the cross-document event extraction. \cite{li} proposed structured prediction method and global features to predict the event mention and its argument that occur in the same sentence simultaneously.\\
+\indent For our system, we considered the event nugget detection as the classification problem. Our idea is any words or phrases are considered as event have some similar characteristics. So we can categorized them into event and non-event. We will described our system description about features, classification model parameters in section \ref{description}. Event Detection and Classification are in section \ref{detect}. The official experimental results are in section \ref{results}. Discussions are in section \ref{discuss}. And conclusion is in section \ref{conclude}.  
+
+
+
+\section{System Description}
+\label{description}
+For the Event Nugget Detection task, we have to detect the event mentioned in the document and classify the event to its type. For this task, annotation guidelines \cite{teruko2} classify events into eight event types: Life, Movement, Business, Conflict, Contact, Personnel, Transaction, and Justice events. These eight types have a total of 33 subtypes. We partitioned the event nugget detection problem into two parts; event detection and event classification to its subtype. For the event detection part, we used simple threshold and brute force algorithm to find the event in the document. We will explain details in the section \ref{detect}. For the classification part, we built feature vectors to train the classification model using Stanford Classifier tool. \\
+\indent Another task that we participate is the Event Nugget Detection and Coreference task. This task we have to link all mentions that are relevant to the same event altogether. The Event Nugget Detection and Coreference task, we find the coreference chain by using the Stanford CoreNLP tool, and then use matching rules to produce the coreference link of all mentions in an event. Details of our features and other tools that were used are described in the following.
+
+\subsection{Training data}
+
+When we detected event mentions in any document, they have to be classified to an event subtypes. The total event subtypes is 33 subtypes. Training data have to be prepared for using Stanford Classifier. After we formed the feature vector, we will use Stanford Classifier to build a classification model. Each training data instance consists of:
+\begin{itemize}
+\item event subtype name as the classname of data
+\item a set of context words
+\item part of speech tags of context words
+\item event nugget (mention)
+\item semantic similarity score between mention and event subtypes
+\end{itemize}
+We extracted the context of the event nugget from the source document. Our context is set of words around the event nugget that have the same part of speech as the event nugget. We used OpenNLP \cite{Opennlp} to find part of speech of any words. These training data will be regenerate as useful natural language features later by Stanford Classifier. The semantic similarity score is measured by the UMBC semantic similarity system \cite{Han:13}. Each line in the training file is a features vector of an event nugget.\\
+\indent Training corpus are combination of the LDC2015E69 and LDC2014E121. The LDC2015E69 (DEFT 2014 Event Nugget Evaluation Annotation Data) consists of 200 files. The LDC2014E121 (DEFT 2014 Event Nugget Evaluation Training Data) contains 151 files. These two corpus come with source document and their annotations data. The total is 351 files. We divided them into training corpus (80\%) and development data (20\%). We have total of 8571 set of training instances. 
+
+\subsubsection{Semantic Similarity}
+
+\noindent We used the UMBC semantic similarity system to compare similarity between event nugget and its event type. The UMBC semantic similarity \cite{Han:13} is based on LSA word similarity model. LSA relies on the fact that semantically similar words are more likely to occur near one another in text.  Thus evidence for word similarity can be computed from a statistical analysis of a large text corpus.  They built the raw word co-occurrence statistics from a portion of a 2007 Stanford WebBase dataset (Stanford, 2001). The UMBC semantic similarity system has been developed a few versions. The version that we used is online as the web service at (http://swoogle.umbc.edu/StsService/GetStsSim). This version showed its high performance in the Semantic Evaluation (SemEval) 2013 and 2014 semantic similarity task \cite{Han:13,Abhay:14}.
+
+
+\subsection{Classification Model}
+\label{classifier}
+We used Stanford Classifier to build the classification model. Stanford Classifier \cite{Man:03} is a probabilistic classifier. It can give a probability distribution over the predicted class for an input. It is a maximum entropy classifier. Maximum entropy models are comparable to multiclass logistic regression models. The advantage of using this tool is they can generate simple natural language features for text classification such as n-gram, word shape, etc. To use the tool we have to prepare the training file, prop file, and test file. Training file is example of data and their classes. Test file contains test data that need to be classified. Prop file is used to specify the features that the tool will generate for each training data and classifier’s parameters.\\
+\indent We did some experiment to find the best features that can represent the characteristics of each event subtypes. Our final feature vectors were produced follows the configuration in the prop file. Each feature preprocessing is defined as follows:
+\begin{enumerate}
+\item \textbf{Context data} It is a set of words around the event nugget. We defined the preprocessor to do character n-grams, and word n-gram with possible n-gram length from 1 to 4. It means that the tool will generate unigram, bigram, trigram, and quadgram for the context data.
+\item \textbf{Part of speech tags} They are part of speech tags of context data. This feature we did word n-gram with possible n-gram length from 1 to 4. The tool will produce unigram to quadgram to this data as well.
+\item \textbf{Event nugget} It is the word that we brought from annotation file. We defined that it will be use as a whole string. Besides that the prefix and suffix will be generated, character n-gram with length from 4 to 9, and we check the word shape with {\em 'dan1'}.
+\item \textbf{Semantic similarity score} Because of the score is the numeric data from 0.0 to 1.0. We have to define this feature as real value.
+\end{enumerate}
+Note that these parameter values are from experiment. In addition to the feature vector parameters, we ran grid search to find the optimal parameters for the classifier model. In addition, because in the testing step we cannot know the event subtype and event nugget before classification (they are what we are predicting), we cannot find the semantic similarity of event nugget and event subtype. So we built two classifiers, they are almost the same except that one classifier the semantic similarity score can be used and another classifier was not used semantic similarity score.
+
+
+\subsection{Realis}
+
+Realis attribute indicates whether or not the event is occurred. It has three possible values; ACTUAL, GENERAL, OTHER. They provided some rules in the task annotation guidelines [].The feature vector of the event was built from these rules. To predict the Realis attribute, we trained a classifier model. The features consist of:
+\begin{itemize}
+\item Verb tense
+\item Has name entity
+\item Contain regular occurring words i.e. every, often, always.
+\item Contain conditional words i.e. whether, if.
+\item Negate event
+\end{itemize}
+
+\subsection{Coreference Resolution}
+We find the coreference chain by using Stanford CoreNLP \cite{Man:14} . The Stanford CoreNLP is the collection of Natural Language Processing such as part of speech tagger, name entity recognizer, etc. Coreference resolution is another function that is provided in the package. We got the coreference set for each document from Stanford CoreNLP. Then we match the set with the detected event mention. The event mentions will be linked together when the mention has the same event type with other mentions in the same coreference chain.
+
+\section{Event Detection and Classification}
+\label{detect}
+As we mentioned above that to accomplish the event nugget detection task we need the event nugget detection step and event nugget classification step. For the event detection part, we used a simple brute force method and experimented event subtypes' thresholds. Detection and classification procedure is as followed.
+\begin{enumerate}
+\item \textbf{Chunking} The whole document was split into chunks follows part of speech tag. Only chunk of noun and chunk of verb are kept. For example, the sentence is {\em'He has been married 3 times'}, part of speech tag of this sentence is {\em B-NP B-VP I-VP I-VP B-NP I-NP}, This sentence is generated three chunks as {\em 'He', 'has been married', '3 times'}. The original sentence will be used as Context data. Chunks will be use as Event nugget. And their part of speech tags will be used as Part of speech tag data. Details in Section \ref{classifier}
+\item \textbf{Pre-classify} Every chunk was pre-classified using our non-semantic similarity classifier model. The classifier model produced the confidence score for each chunk.
+\item \textbf{Thresholding} The confidence score for each chunk was compared with its threshold of the predicted event subtypes. Each event subtype has a threshold that we got from experiment in the training step. The chunk that has higher confidence score than its threshold of the predicted event subtype will be kept as our event nugget. We got a collection of event nuggets and its predicted event subtype. 
+\item \textbf{Semantic similarity measuring} The event nugget and its predicted event subtypes were measured the semantic similarity using UMBC STS system. 
+\item \textbf{Classifying} The testing data in number 1 plus semantic similarity score from number 3 will be classified again with the classifier model that was trained with semantic similarity data. Finally, the predicted event type from the classifier model is our detected event nugget and its event subtype.
+\end{enumerate}
+
+\section{Experimental Results}
+\label{results}
+Testing data consists of 202 documents. They consists of 98 files of newswire data and 104 files of multi-post discussion forum data. We sent two runs for the Event Nugget Detection task and the Event Nugget Coreference task. Two runs are different in the threshold for selecting the chunk as the event nuggets. The best result that we got is F1 measure of 0.33. It is quite low when compare with the best system of the event nugget task. The details of our best system performance are in Table \ref{perf}.
+
+\begin{table}
+
+\begin{tabular}{ | c| c| c| c| } 
+\hline
+Attributes& Precision & Recall & F1 \\ 
+\hline
+plain & 40.76 &28.88 & 33.81 \\ 
+mention$\_$type & 32.46 &23.00 & 26.93 \\ 
+realis$\_$status & 21.81 & 15.45 & 18.09 \\
+mention+realis & 16.74 & 11.86 & 13.89\\
+
+\hline
+
+\end{tabular}
+\caption {The system performance}
+\label{perf}
+\end{table}
+
+
+The system performance of mention detection (plain) in Table 1 showed that our system can detect correctly 40.76 percent of retrieved events. Also our system can retrieve event only 28.88 percent of total event that should be detected. About the mention type performance of our system is quite low, our system can classify the event correctly about 32.46 percent of overall predicted event. And our system can classify the event correctly about 23.00 percent of all of event. For the event nugget coreference task, other performances are the same with additional of average CONLL score is 17.80. We will discuss what reasons are affected our system to has low performance in the next section.
+
+\section{Discussion}
+\label{discuss}
+After we looked through the details of each document result, we observed some remarkable points. We will analyze the system performance in two parts; mention detection and mention classification. About mention (event) detection, our system always produced high precision but low recall. For example, the highest precision that we have is 91.67 percent, but the recall is 33.33 percent. The system always got the low recall because we defined too high threshold. Most of detected mentions are correct but we left a lot of event out. If we lower the threshold it may produce higher recall lower precision, the F1 measure can be higher. Another problem is the mention span that affected the performance. Because we form the mention span from chunk of part of speech tag, the mention will not exactly match to the gold standard. In summary, the brute force and threshold method is simple but we need more experiment to select the better threshold.\\ 
+\indent For mention classification, both the precision and recall are the same range. It means that our features cannot reflect the characteristics of event subtypes. In this part, we can consider the dependency of happening of event and used as heuristic rules after classify the event. Some event mentions are less likely to be in the same sentence such as {\em Nominate} and {\em Charge}. Some events often appeared together, for example, {\em Attack} and {\em Injure}. We can infer it from the statistical of training data. It will improve the accuracy of the event classification.\\ \indent About the Realis attribute, it has to include other information of event. Only the {\em 'yes'} or {\em 'no'} features that we have cannot discover the right answer. We may use statistical about event types such as it is the definitely happened type, or it is inconsistency type, to predict the Realis attribute.
+
+
+\section{Conclusion}
+\label{conclude}
+Our Event Nugget Detection system is simple but low performance, due to its low efficiency in identifying event mention, and event mention span. This error has been propagate to the event classification. To improve the performance, we plan to use characteristics of events, applying commonsense knowledge in the future.
+
+\begin{thebibliography}{}
+
+\bibitem[\protect\citename{Baldridge}2005]{Opennlp}
+{Jason Baldridge}.
+\newblock 2005.
+\newblock {\em The opennlp project}.
+\newblock URL: http://opennlp.apache.org/index.html
+
+\bibitem[\protect\citename{Grishman, et.al.}2005]{grishman}
+{Ralph Grishman, David Westbrook, and Adam Meyers}. 
+\newblock 2005.
+\newblock {\em Nyu’s english ace 2005 system description}.
+\newblock In Proceedings of ACE 2005 Evaluation Workshop.
+
+\bibitem[\protect\citename{Han}2013]{Han:13}
+{Lushan Han, Abhay L. Kashyap, Tim Finin, James Mayfield, and Johnathan Weese.}
+\newblock 2013.
+\newblock {\em UMBC EBIQUITY-CORE: Semantic Textual Similarity Systems},.
+\newblock In Second Joint Conf. on Lexical and Computational Semantics. Association for Computational Linguistics.
+
+\bibitem[\protect\citename{Im, et. al.}2013]{sentiment}
+{Tan Li Im, Phang Wai San, Chin Kim On, Rayner Alfred, and Philip Anthony}. 
+\newblock 2013.
+\newblock {\em Analysing market sentiment in financial news using lexical approach}. 
+\newblock Open Systems (ICOS), 2013 IEEE Conference on, pp. 145-149. IEEE.
+
+\bibitem[\protect\citename{Ji and Grishman}2008]{heng}
+{Heng Ji, and Ralph Grishman}.
+\newblock 2008.
+\newblock {\em Refining Event Extraction through Cross-Document Inference}. 
+\newblock In ACL, pp. 254-262.
+
+
+\bibitem[\protect\citename{Abhay, et. al.}2014]{Abhay:14}
+{Abhay L. Kashyap, Lushan Han, Roberto Yus, Jennifer Sleeman, Taneeya Satyapanich, Sunil Gandhi, and Tim Finin},
+\newblock 2014.
+\newblock {\em Meerkat mafia: Multilingual and cross-level semantic textual similarity systems},.
+\newblock Proceedings of the 8th International Workshop on Semantic Evaluation.
+
+\bibitem[\protect\citename{Li et.al.}2013]{li} 
+{Qi Li, Heng Ji, and Liang Huang}.
+\newblock 2013.
+\newblock {\em Joint Event Extraction via Structured Prediction with Global Features}.
+\newblock ACL
+
+\bibitem[\protect\citename{Liu et.al.}2015]{teruko}
+{Zhengzhong Liu, Teruko Mitamura, and Eduard Hovy}.
+\newblock 2015.
+\newblock {\em Evaluation Algorithms for Event Nugget Detection: A Pilot Study}.
+\newblock In Proceedings of the 3rd Workshop on EVENTS at the NAACL-HLT, pp. 53-57.
+
+\bibitem[\protect\citename{Ma and Syamsiyah}2014]{snomed}
+{Yue Ma and Alifah Syamsiyah}.
+\newblock 2014.
+\newblock {\em A hybrid approach to learn description logic based biomedical ontology from texts}.
+\newblock ISWC.
+
+\bibitem[\protect\citename{{Manning and Klein.}}2003]{Man:03}
+{Christopher D. Manning and Dan Klein}.
+\newblock 2003.
+\newblock {\em Optimization, Maxent Models, and Conditional Estimation without Magic}.
+\newblock Tutorial at HLT-NAACL 2003 and ACL 2003.
+
+\bibitem[\protect\citename{Manning, et.al.}2014]{Man:14}
+{Christopher D. Manning, Mihai Surdeanu, , John Bauer, Jenny Finkel, Steven J. Bethard, and David McClosky}.
+\newblock 2014.
+\newblock {\em The Stanford CoreNLP Natural Language Processing Toolkit}.
+\newblock In Proceedings of 52nd Annual Meeting of the Association for Computational Linguistics: System Demonstrations, pp. 55-60. 
+
+\bibitem[\protect\citename{Mitamura}2014]{teruko2}
+{Teruko Mitamura}.
+\newblock 2014.
+\newblock {\em TAC KBP event detection annotation guidelines, v1.7}.
+\newblock Technical report, Carnegie Mellon University, September.
+
+\bibitem[\protect\citename{Sammons, et.al.}2014]{uiccg}
+{Mark Sammons, Yangqiu Song, Ruichen Wang, Gourab Kundu, Chen-Tse Tsai, Shyam Upadhyay, Siddarth Ancha, Stephen Mayhew, and Dan Roth}. \newblock 2014.
+\newblock {\em Overview of UI-CCG Systems for Event Argument Extraction, Entity Discovery and Linking, and Slot Filler Validation}.
+\newblock Urbana 51 (2014): 61801.
+
+\bibitem[\protect\citename{Wicentowski and Sydes}2012]{emo}
+{Richard Wicentowski, and Matthew R. Sydes}.
+\newblock 2012.
+\newblock {\em Emotion Detection in Suicide Notes Using Maximum Entropy Classification}.
+\newblock Biomedical Informatics Insights 5.Suppl 1 (2012): 51–60. PMC.
+
+
+
+
+
+\end{thebibliography}
+
+\end{document}
